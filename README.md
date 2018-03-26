@@ -2,7 +2,7 @@
 
 Exercises to practise Webpack.
 
-## Requisites
+## Prerequisites
 
 You'll need the following installed before you start anything:
 
