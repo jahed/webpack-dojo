@@ -1,17 +1,19 @@
 {
   "name": "@webpack-dojo/exercise-1",
-  "description": "Webpack Exercise 1: Basics",
+  "description": "Webpack Dojo Exercise",
   "version": "1.0.0",
   "license": "MIT",
   "private": true,
+  "main": "dojo_files/index.js",
   "scripts": {
-    "test": "mocha \"{,!(node_modules)/**/}*.test.js\""
+    "test": "jest --config=dojo_files/jest.config.js"
   },
-  "devDependencies": {
+  "dependencies": {
     "@webpack-dojo/helpers": "1.0.0",
     "html-webpack-plugin": "2.30.1",
+    "jest": "22.4.3",
+    "live-server": "1.2.0",
     "memory-fs": "0.4.1",
-    "mocha": "5.0.5",
     "webpack": "3.11.0"
   }
 }

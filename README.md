@@ -11,4 +11,16 @@ You'll need the following installed before you start anything:
 
 ## Exercises
 
-Work in progress.
+
+## TODO
+
+Things to implement for this Dojo
+
+- Exercises
+- Webpack Stats / Assets viewer
+
+### Server
+
+- yarn start -> yarn install, exercise-server
+- exercise-server -> serve pages, start websocket server, watch test results
+- exercise pages -> connect to websocket to retrieve test results to display

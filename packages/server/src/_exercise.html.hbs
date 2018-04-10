@@ -1,0 +1,12 @@
+<h1>{{exercise.title}}</h1>
+
+{{{content}}}
+
+<script src="/assets/js/socket.io"></script>
+<script src="/assets/js/exercise"></script>
+<script>
+  initExercise({
+    exerciseId: '{{exercise.id}}',
+    socketIO: io
+  })
+</script>

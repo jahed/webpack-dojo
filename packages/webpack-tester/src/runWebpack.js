@@ -4,13 +4,14 @@ const runCompiler = require('./runCompiler')
 const promiseChain = require('./promiseChain')
 
 const runWebpack = config => {
-  const statsPromise = promiseChain(
+  const stats = promiseChain(
     createCompiler,
     runCompiler
   )(config)
 
   return {
-    withStats: expectations => () => statsPromise.then(stats => expectations(stats))
+    stats,
+    withStats: expectations => () => stats.then(stats => expectations(stats))
   }
 }
 

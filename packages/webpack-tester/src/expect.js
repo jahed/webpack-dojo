@@ -1,6 +1,3 @@
-const chai = require('chai')
-const dirtyChai = require('dirty-chai')
+const expect = require('expect')
 
-chai.use(dirtyChai)
-
-module.exports = chai.expect
+module.exports = expect

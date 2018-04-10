@@ -7,9 +7,11 @@
   "license": "MIT",
   "private": true,
   "workspaces": [
-    "packages/*"
+    "packages/*",
+    "exercises/*"
   ],
-  "devDependencies": {
+  "dependencies": {
+    "@webpack-dojo/server": "1.0.0",
     "eslint": "4.19.1",
     "eslint-config-standard": "11.0.0",
     "eslint-plugin-import": "2.9.0",
