@@ -69,27 +69,29 @@ const initExercise = ({ exerciseId, socketIO }) => {
       const { results } = payload
       const { testResults: fileResults } = results
 
-      const { testResults } = fileResults[0]
+      fileResults.forEach(fileResult => {
+        const { testResults, failureMessage } = fileResult
 
-      document.getElementById('totalFailure').innerHTML = testResults.length < 1 && fileResults[0].failureMessage
-        ? `<pre class="bg-dark text-light p-4">${fileResults[0].failureMessage}</pre>`
-        : ''
+        document.getElementById('totalFailure').innerHTML = testResults.length < 1 && failureMessage
+          ? `<pre class="bg-dark text-light p-4">${failureMessage}</pre>`
+          : ''
 
-      let firstFailureRendered = false
+        let firstFailureRendered = false
 
-      testResults.forEach(result => {
-        try {
-          const isFirstFailure = !firstFailureRendered && result.status === status.failed
-          const title = JSON.parse(result.title)
-          document.getElementById(title.id).innerHTML = resultTemplate({
-            title,
-            result,
-            isFirstFailure
-          })
-          firstFailureRendered = firstFailureRendered || isFirstFailure
-        } catch (e) {
-          console.error(e)
-        }
+        testResults.forEach(result => {
+          try {
+            const isFirstFailure = !firstFailureRendered && result.status === status.failed
+            const title = JSON.parse(result.title)
+            document.getElementById(title.id).innerHTML = resultTemplate({
+              title,
+              result,
+              isFirstFailure
+            })
+            firstFailureRendered = firstFailureRendered || isFirstFailure
+          } catch (e) {
+            console.error(e)
+          }
+        })
       })
     }
   })

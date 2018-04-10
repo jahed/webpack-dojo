@@ -6,5 +6,5 @@ module.exports = {
   documentPath: path.resolve(__dirname, 'exercise.html'),
   statsPath: path.resolve(__dirname, 'test_output', 'stats.json'),
   resultsPath: path.resolve(__dirname, 'test_output', 'results.json'),
-  testCommand: `yarn jest --watch --config="${path.resolve(__dirname, 'jest.config.js')}"`
+  testCommand: `yarn jest --watchAll --config="${path.resolve(__dirname, 'jest.config.js')}"`
 }

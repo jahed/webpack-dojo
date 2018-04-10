@@ -10,6 +10,9 @@
     "packages/*",
     "exercises/*"
   ],
+  "scripts": {
+    "start": "webpack-dojo"
+  },
   "dependencies": {
     "@webpack-dojo/server": "1.0.0",
     "eslint": "4.19.1",
