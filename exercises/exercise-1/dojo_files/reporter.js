@@ -10,7 +10,9 @@ class JestReporter {
   }
 
   onRunComplete (contexts, results) {
-    writeFile(path.resolve(__dirname, 'test_output', 'results.json'), JSON.stringify(results, null, 2))
+    const outputPath = path.resolve(__dirname, 'test_output', 'results.json')
+    console.log('writing results.json', outputPath)
+    writeFile(outputPath, JSON.stringify(results, null, 2))
   }
 }
 

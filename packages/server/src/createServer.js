@@ -77,8 +77,8 @@ const createServer = async () => {
 
       console.log('Exercise', exercise)
 
-      const sendResults = async () => {
-        const resultsFile = await readFile(exercise.resultsPath)
+      const sendResults = async (resultsPath) => {
+        const resultsFile = await readFile(resultsPath)
         const results = JSON.parse(resultsFile.toString())
         results.testResults.forEach(r1 => {
           r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
@@ -87,8 +87,16 @@ const createServer = async () => {
           })
         })
 
-        socket.emit('EXERCISE_RESPONSE', {
+        socket.emit('EXERCISE_RESULTS', {
           results
+        })
+      }
+
+      const sendStats = async (statsPath) => {
+        const statsFile = await readFile(statsPath)
+        const stats = JSON.parse(statsFile.toString())
+        socket.emit('EXERCISE_STATS', {
+          stats
         })
       }
 
@@ -115,16 +123,30 @@ const createServer = async () => {
       }
 
       try {
-        await sendResults()
+        await Promise.all([
+          sendResults(exercise.resultsPath),
+          sendStats(exercise.statsPath)
+        ])
       } catch (e) {
         console.warn('ignoring initial parse error', e)
       }
 
       console.log('watching', exercise.resultsPath)
-      const resultsWatcher = fs.watch(exercise.resultsPath, async (type) => {
+      const resultsWatcher = fs.watch(exercise.resultsPath, async type => {
         if (type === 'change') {
           try {
-            await sendResults()
+            await sendResults(exercise.resultsPath)
+          } catch (e) {
+            console.warn('ignoring parse error', e)
+          }
+        }
+      })
+
+      console.log('watching', exercise.statsPath)
+      const statsWatcher = fs.watch(exercise.statsPath, async type => {
+        if (type === 'change') {
+          try {
+            await sendStats(exercise.statsPath)
           } catch (e) {
             console.warn('ignoring parse error', e)
           }
@@ -137,6 +159,7 @@ const createServer = async () => {
         console.log('closing', exercise.resultsPath)
         testWatcher.kill('SIGINT')
         resultsWatcher.close()
+        statsWatcher.close()
       })
     })
   })

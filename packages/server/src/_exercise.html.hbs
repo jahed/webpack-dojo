@@ -1,13 +1,37 @@
-<h1>{{exercise.title}}</h1>
-<div id="totalFailure"></div>
-
-{{{content}}}
-
+<div class="container-fluid">
+<div class="row mt-3">
+  <div class="col-sm-7">
+    <h1>{{exercise.title}}</h1>
+    {{{content}}}
+  </div>
+  <div class="col-sm-5" style="position: fixed; top: 5rem; right: 0;">
+    <div class="card">
+      <div class="card-header">
+        Your Progress
+        <a
+          class="ml-1"
+          data-container="body"
+          data-toggle="popover"
+          data-content="This is the output of your current webpack.config.js for this exercise."
+          href="#"
+        >
+          (?)
+        </a>
+      </div>
+      <div class="card-body">
+        <div id="totalFailure"></div>
+        <div id="stats"></div>
+      </div>
+    </div>
+  </div>
+</div>
+</div>
 <script src="/assets/js/socket.io"></script>
 <script src="/assets/js/exercise"></script>
 <script>
   initExercise({
     exerciseId: '{{exercise.id}}',
-    socketIO: io
+    socketIO: io,
+    $: jQuery
   })
 </script>

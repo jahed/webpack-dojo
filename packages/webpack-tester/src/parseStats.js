@@ -1,8 +1,5 @@
 const parseStats = stats => {
-  const info = stats.toJson({
-    all: false,
-    assets: true
-  })
+  const info = stats.toJson('normal')
 
   if (stats.hasErrors()) {
     return Promise.reject(new Error(info.errors[0]))

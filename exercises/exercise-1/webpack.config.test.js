@@ -8,7 +8,9 @@ const { stats, withStats } = runWebpack(config)
 
 stats
   .then(stats => {
-    writeFile(path.resolve(__dirname, 'dojo_files', 'test_output', 'stats.json'), JSON.stringify(stats, null, 2))
+    const outputPath = path.resolve(__dirname, 'dojo_files', 'test_output', 'stats.json')
+    console.log('writing stats.json', outputPath)
+    writeFile(outputPath, JSON.stringify(stats, null, 2))
   })
   .catch(e => console.error(e))
 

@@ -1,17 +1,17 @@
-const initExercise = ({ exerciseId, socketIO }) => {
-  const listenFor = ({ socket, type, handler }) => socket.on(type, payload => {
-    console.log('res', {
-      type: 'EXERCISE_RESPONSE',
-      payload
+const initExercise = ({ exerciseId, socketIO, $ }) => {
+  const listenFor = ({ socket, type, handler }) => {
+    socket.on(type, payload => {
+      console.log('res', { type, payload })
+      return handler(payload)
     })
-    return handler(payload)
-  })
+  }
 
   const sendTo = ({ socket, action }) => {
     console.log('req', action)
     socket.emit(action.type, action.payload)
   }
 
+  $('[data-toggle="popover"]').popover()
   const socket = socketIO()
 
   const status = {
@@ -60,7 +60,7 @@ const initExercise = ({ exerciseId, socketIO }) => {
 
   listenFor({
     socket,
-    type: 'EXERCISE_RESPONSE',
+    type: 'EXERCISE_RESULTS',
     handler: payload => {
       document.querySelectorAll('.test-case').forEach(e => {
         e.innerHTML = ''
@@ -93,6 +93,17 @@ const initExercise = ({ exerciseId, socketIO }) => {
           }
         })
       })
+    }
+  })
+
+  listenFor({
+    socket,
+    type: 'EXERCISE_STATS',
+    handler: payload => {
+      const statsElement = document.getElementById('stats')
+      statsElement.innerHTML = ''
+
+      const { stats } = payload
     }
   })
 
