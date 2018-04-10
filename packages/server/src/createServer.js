@@ -76,26 +76,40 @@ const createServer = async () => {
           throw new Error('EXERCISE_REQUEST: does not exist')
         }
 
-        console.log('TODO start watchers here')
-
-        const resultsFile = await readFile(exercises[exerciseId].resultsPath)
-        const results = JSON.parse(resultsFile.toString())
-        results.testResults.forEach(r1 => {
-          r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
-          r1.testResults.forEach(r2 => {
-            r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
+        const sendResults = async () => {
+          const resultsFile = await readFile(exercise.resultsPath)
+          const results = JSON.parse(resultsFile.toString())
+          results.testResults.forEach(r1 => {
+            r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
+            r1.testResults.forEach(r2 => {
+              r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
+            })
           })
+
+          socket.emit('EXERCISE_RESPONSE', {
+            results
+          })
+        }
+
+        await sendResults()
+
+        console.log('watching', exercise.resultsPath)
+        const watcher = fs.watch(exercise.resultsPath, async (type) => {
+          if (type === 'change') {
+            try {
+              await sendResults()
+            } catch (e) {
+              console.warn('ignoring parse error', e)
+            }
+          }
         })
 
-        socket.emit('EXERCISE_RESPONSE', {
-          results
+        socket.on('disconnect', () => {
+          console.log('closing', exercise.resultsPath)
+          watcher.close()
         })
       } catch (e) {
         console.log(e)
-      } finally {
-        socket.on('disconnect', () => {
-          console.log('TODO stop watchers here')
-        })
       }
     })
   })

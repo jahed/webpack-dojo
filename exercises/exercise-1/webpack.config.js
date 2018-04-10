@@ -8,8 +8,8 @@ module.exports = {
   entry: {
     index: './index.js'
   },
-  // output: {
-  //   path: outputPath,
-  //   filename: '[name]-[chunkhash].js'
-  // }
+  output: {
+    path: outputPath,
+    // filename: '[name]-[chunkhash].js'
+  }
 }
