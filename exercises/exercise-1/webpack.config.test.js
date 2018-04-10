@@ -6,9 +6,11 @@ const { runWebpack, expect } = require('@webpack-dojo/webpack-tester')
 const config = require('./webpack.config')
 const { stats, withStats } = runWebpack(config)
 
-stats.then(stats => {
-  writeFile(path.resolve(__dirname, 'dojo_files', 'test_output', 'stats.json'), JSON.stringify(stats, null, 2))
-})
+stats
+  .then(stats => {
+    writeFile(path.resolve(__dirname, 'dojo_files', 'test_output', 'stats.json'), JSON.stringify(stats, null, 2))
+  })
+  .catch(e => console.error(e))
 
 const title = (id, description) => JSON.stringify({ id, description })
 
@@ -24,7 +26,6 @@ test(title('1.2', 'Output a single index.js file.'), withStats(stats => {
       })
     ])
   )
-  expect(1).toEqual(2)
 }))
 
 test(title('1.3', 'Add a content hash to the output filename.'), withStats(stats => {

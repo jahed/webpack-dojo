@@ -29,7 +29,7 @@ const initExercise = ({ exerciseId, socketIO }) => {
     failed: 'danger'
   }
 
-  const resultTemplate = ({ title, result }) => {
+  const resultTemplate = ({ title, result, isFirstFailure }) => {
     const statusButton = result.status === status.failed
       ? (`
         <button class="btn btn-sm btn-${alertBadgeType[result.status]} float-right" type="button" data-toggle="collapse" data-target="#${title.id}-collapse">
@@ -40,7 +40,7 @@ const initExercise = ({ exerciseId, socketIO }) => {
 
     const more = result.status === status.failed
       ? (`
-        <div class="collapse show" id="${title.id}-collapse">
+        <div class="collapse ${isFirstFailure ? 'show' : ''}" id="${title.id}-collapse">
           <hr />
           <pre class="bg-dark text-light p-4">${result.failureMessages.join('\\n')}</pre>
         </div>
@@ -65,11 +65,18 @@ const initExercise = ({ exerciseId, socketIO }) => {
       const { results } = payload
       const { testResults: fileResults } = results
       const { testResults } = fileResults[0]
+      let firstFailureRendered = false
 
       testResults.forEach(result => {
         try {
+          const isFirstFailure = !firstFailureRendered && result.status === status.failed
           const title = JSON.parse(result.title)
-          document.getElementById(title.id).innerHTML = resultTemplate({ title, result })
+          document.getElementById(title.id).innerHTML = resultTemplate({
+            title,
+            result,
+            isFirstFailure
+          })
+          firstFailureRendered = firstFailureRendered || isFirstFailure
         } catch (e) {
           console.error(e)
         }
