@@ -16,27 +16,40 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
 
   const status = {
     passed: 'passed',
-    failed: 'failed'
+    failed: 'failed',
+    loading: 'loading'
   }
 
   const alertType = {
-    passed: 'light',
-    failed: 'warning'
+    passed: 'success',
+    failed: 'warning',
+    loading: 'secondary'
   }
 
   const alertBadgeType = {
-    passed: 'outline-success',
-    failed: 'danger'
+    passed: 'success',
+    failed: 'danger',
+    loading: 'secondary'
+  }
+
+  const alertBadgeText = {
+    passed: 'Pass',
+    failed: 'Fail',
+    loading: 'Unknown'
   }
 
   const resultTemplate = ({ title, result, isFirstFailure }) => {
     const statusButton = result.status === status.failed
       ? (`
         <button class="btn btn-sm btn-${alertBadgeType[result.status]} float-right" type="button" data-toggle="collapse" data-target="#${title.id}-collapse">
-          Fail
+          ${alertBadgeText[result.status]}
         </button>
       `)
-      : `<button class="btn btn-sm btn-${alertBadgeType[result.status]} float-right" disabled>Pass</button>`
+      : (`
+        <button class="btn btn-sm btn-${alertBadgeType[result.status]} float-right" disabled>
+          ${alertBadgeText[result.status]}
+        </button>
+      `)
 
     const more = result.status === status.failed
       ? (`
@@ -50,7 +63,7 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
     return `
       <div class="alert alert-${alertType[result.status]}" role="alert">
       <div class="d-flex justify-content-between align-items-center">
-        ${title.id}. ${title.description}
+        ${title.id ? `${title.id}. ` : ''}${title.description}
         ${statusButton}
       </div>
       ${more}
@@ -63,7 +76,15 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
     type: 'EXERCISE_RESULTS',
     handler: payload => {
       document.querySelectorAll('.test-case').forEach(e => {
-        e.innerHTML = ''
+        e.innerHTML = resultTemplate({
+          title: {
+            id: e.id,
+            description: 'Exercise'
+          },
+          result: {
+            status: 'loading'
+          }
+        })
       })
 
       const { results } = payload
@@ -73,7 +94,12 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
         const { testResults, failureMessage } = fileResult
 
         document.getElementById('totalFailure').innerHTML = testResults.length < 1 && failureMessage
-          ? `<pre class="bg-dark text-light p-4">${failureMessage}</pre>`
+          ? (`
+            <div class="alert alert-danger">
+              <p>Failed to parse code. Check the follow piece of code before continuing:</p>
+              <pre class="bg-dark text-light p-4">${failureMessage}</pre>
+            </div>
+          `)
           : ''
 
         let firstFailureRendered = false
