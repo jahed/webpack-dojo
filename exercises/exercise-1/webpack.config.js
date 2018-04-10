@@ -10,6 +10,6 @@ module.exports = {
   },
   output: {
     path: outputPath,
-    // filename: '[name]-[chunkhash].js'
+    filename: '[name]-[chunkhash].js'
   }
 }

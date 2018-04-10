@@ -9,7 +9,7 @@ const getAssetPath = require('./getAssetPath')
 const exercises = require('./exercises')
 const AnsiToHTML = require('ansi-to-html')
 const ansiToHTML = new AnsiToHTML()
-
+const { exec } = require('child_process')
 const readFile = util.promisify(fs.readFile)
 
 const createServer = async () => {
@@ -68,49 +68,76 @@ const createServer = async () => {
   io.on('connection', socket => {
     console.log('a user connected')
     socket.on('EXERCISE_REQUEST', async ({ exerciseId }) => {
-      try {
-        const exercise = exercises[exerciseId]
-        console.log('EXERCISE_REQUEST: ' + exerciseId)
+      const exercise = exercises[exerciseId]
+      console.log('EXERCISE_REQUEST: ' + exerciseId)
 
-        if (!exercise) {
-          throw new Error('EXERCISE_REQUEST: does not exist')
-        }
-
-        const sendResults = async () => {
-          const resultsFile = await readFile(exercise.resultsPath)
-          const results = JSON.parse(resultsFile.toString())
-          results.testResults.forEach(r1 => {
-            r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
-            r1.testResults.forEach(r2 => {
-              r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
-            })
-          })
-
-          socket.emit('EXERCISE_RESPONSE', {
-            results
-          })
-        }
-
-        await sendResults()
-
-        console.log('watching', exercise.resultsPath)
-        const watcher = fs.watch(exercise.resultsPath, async (type) => {
-          if (type === 'change') {
-            try {
-              await sendResults()
-            } catch (e) {
-              console.warn('ignoring parse error', e)
-            }
-          }
-        })
-
-        socket.on('disconnect', () => {
-          console.log('closing', exercise.resultsPath)
-          watcher.close()
-        })
-      } catch (e) {
-        console.log(e)
+      if (!exercise) {
+        throw new Error('EXERCISE_REQUEST: does not exist')
       }
+
+      console.log('Exercise', exercise)
+
+      const sendResults = async () => {
+        const resultsFile = await readFile(exercise.resultsPath)
+        const results = JSON.parse(resultsFile.toString())
+        results.testResults.forEach(r1 => {
+          r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
+          r1.testResults.forEach(r2 => {
+            r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
+          })
+        })
+
+        socket.emit('EXERCISE_RESPONSE', {
+          results
+        })
+      }
+
+      const runTestWatcher = () => {
+        const testProcess = exec(exercise.testCommand)
+
+        testProcess.stdout.on('data', (data) => {
+          console.log(data)
+        })
+
+        testProcess.stderr.on('data', (data) => {
+          console.log(data)
+        })
+
+        testProcess.on('error', (error) => {
+          console.log(error)
+        })
+
+        testProcess.on('close', (code) => {
+          console.log(`testWatcher exited with code ${code}`)
+        })
+
+        return testProcess
+      }
+
+      try {
+        await sendResults()
+      } catch (e) {
+        console.warn('ignoring initial parse error', e)
+      }
+
+      console.log('watching', exercise.resultsPath)
+      const resultsWatcher = fs.watch(exercise.resultsPath, async (type) => {
+        if (type === 'change') {
+          try {
+            await sendResults()
+          } catch (e) {
+            console.warn('ignoring parse error', e)
+          }
+        }
+      })
+
+      const testWatcher = runTestWatcher()
+
+      socket.on('disconnect', () => {
+        console.log('closing', exercise.resultsPath)
+        testWatcher.kill('SIGINT')
+        resultsWatcher.close()
+      })
     })
   })
 

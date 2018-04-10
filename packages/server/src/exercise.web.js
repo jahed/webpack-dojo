@@ -62,9 +62,19 @@ const initExercise = ({ exerciseId, socketIO }) => {
     socket,
     type: 'EXERCISE_RESPONSE',
     handler: payload => {
+      document.querySelectorAll('.test-case').forEach(e => {
+        e.innerHTML = ''
+      })
+
       const { results } = payload
       const { testResults: fileResults } = results
+
       const { testResults } = fileResults[0]
+
+      document.getElementById('totalFailure').innerHTML = testResults.length < 1 && fileResults[0].failureMessage
+        ? `<pre class="bg-dark text-light p-4">${fileResults[0].failureMessage}</pre>`
+        : ''
+
       let firstFailureRendered = false
 
       testResults.forEach(result => {
