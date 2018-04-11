@@ -1,14 +1,31 @@
 <div class="container-fluid">
-<div class="row mt-3">
-  <div class="col-md-7 border-right">
-    <h1>{{exercise.title}}</h1>
-    <div id="totalFailure"></div>
-    {{{content}}}
+<div class="row mt-4">
+  <div class="col-md-7 border-right mb-4">
+    <style>
+      article h1, article h2, article h3 {
+        margin: 2rem 0 1rem;
+      }
+      article h1 {
+        margin-top: 0;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px solid #ddd;
+      }
+      article p {
+        font-size: 1.2rem;
+        line-height: 1.5em;
+      }
+    </style>
+    <article class="ml-4 mr-4">
+      <h1>{{exercise.title}}</h1>
+      <div id="totalFailure"></div>
+      {{{content}}}
+      <div id="testProgress"></div>
+    </article>
   </div>
-  <div class="col-md-5 d-none d-md-block" style="position: fixed; top: 5rem; right: 0;">
+  <div class="col-md-5">
     <div class="card">
       <div class="card-header">
-        Your Progress
+        Webpack Output
         <a
           class="ml-1"
           data-container="body"
@@ -27,11 +44,13 @@
 </div>
 </div>
 <script src="/assets/js/socket.io"></script>
+<script src="/assets/js/highlight"></script>
 <script src="/assets/js/exercise"></script>
 <script>
   initExercise({
     exerciseId: '{{exercise.id}}',
     socketIO: io,
-    $: jQuery
+    $: jQuery,
+    hljs: hljs
   })
 </script>

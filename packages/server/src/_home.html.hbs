@@ -1,14 +1,20 @@
-<div class="container mt-5">
-  <div class="jumbotron text-center">
+<div class="container mt-5 text-center">
+  <div class="jumbotron">
     <h1 class="display-4"><a href="/">Webpack Dojo</a></h1>
     <p class="lead">Learn Webpack together.</p>
   </div>
 
+  <div class="alert alert-info">
+    This dojo is a work in progress. If things break, try restarting the server or ask for help.
+  </div>
+
+  <h3 class="mt-5 mb-3">Choose an Exercise</h3>
   <div class="list-group">
   {{#each exercises}}
     <a class="list-group-item list-group-item-action" href="/exercises/{{id}}">{{title}}</a>
   {{/each}}
+    <span class="list-group-item disabled">More coming soon...</span>
   </div>
 
-  <footer class="text-muted text-center mt-5">&copy; 2018 Jahed Ahmed</footer>
+  <footer class="text-muted mt-5">&copy; 2018 Jahed Ahmed</footer>
 </div>

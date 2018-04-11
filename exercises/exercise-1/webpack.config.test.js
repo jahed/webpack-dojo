@@ -16,22 +16,17 @@ stats
 
 const title = (id, description) => JSON.stringify({ id, description })
 
-test(title('1.1', 'Create a Webpack config that compiles.'), withStats(stats => {
-  expect(stats).toBeInstanceOf(Object)
-}))
-
-test(title('1.2', 'Output a single index.js file.'), withStats(stats => {
+test(title('1.1', 'Output a single index.js file.'), withStats(stats => {
   expect(stats.assets).toEqual(
     expect.arrayContaining([
       expect.objectContaining({
-        name: expect.stringMatching(/index-.+\.js/)
+        name: expect.stringMatching(/index.*\.js/)
       })
     ])
   )
 }))
 
-test(title('1.3', 'Add a content hash to the output filename.'), withStats(stats => {
-  expect(config.output.filename).toEqual('[name]-[chunkhash].js')
+test(title('1.2', 'Add a content hash to the output filename.'), withStats(stats => {
   expect(stats.assets).toEqual(
     expect.arrayContaining([
       expect.objectContaining({

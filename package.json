@@ -11,7 +11,7 @@
     "exercises/*"
   ],
   "scripts": {
-    "start": "webpack-dojo"
+    "start": "yarn install && webpack-dojo"
   },
   "dependencies": {
     "@webpack-dojo/server": "1.0.0",

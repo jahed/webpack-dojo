@@ -1,4 +1,4 @@
-const initExercise = ({ exerciseId, socketIO, $ }) => {
+const initExercise = ({ exerciseId, socketIO, $, hljs }) => {
   const listenFor = ({ socket, type, handler }) => {
     socket.on(type, payload => {
       console.log('res', { type, payload })
@@ -10,6 +10,13 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
     console.log('req', action)
     socket.emit(action.type, action.payload)
   }
+
+  $(document).ready(() => {
+    $('pre code').each((i, block) => {
+      block.innerHTML = block.innerHTML.trim()
+      hljs.highlightBlock(block)
+    })
+  })
 
   $('[data-toggle="popover"]').popover()
   const socket = socketIO()
@@ -38,7 +45,7 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
     loading: 'Unknown'
   }
 
-  const resultTemplate = ({ title, result, isFirstFailure }) => {
+  const resultTemplate = ({ title, result }) => {
     const statusButton = result.status === status.failed
       ? (`
         <button class="btn btn-sm btn-${alertBadgeType[result.status]} float-right" type="button" data-toggle="collapse" data-target="#${title.id}-collapse">
@@ -53,7 +60,7 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
 
     const more = result.status === status.failed
       ? (`
-        <div class="collapse ${isFirstFailure ? 'show' : ''}" id="${title.id}-collapse">
+        <div class="collapse" id="${title.id}-collapse">
           <hr />
           <pre class="bg-dark text-light p-4">${result.failureMessages.join('\\n')}</pre>
         </div>
@@ -88,7 +95,20 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
       })
 
       const { results } = payload
-      const { testResults: fileResults } = results
+      const { testResults: fileResults, numPassedTests, numTotalTests } = results
+
+      const progressPerc = Math.floor((numPassedTests / (numTotalTests || 1)) * 100)
+      const progressText = progressPerc === 100 ? 'Exercise Complete!' : `Completed ${numPassedTests} of ${numTotalTests} Tasks`
+      const progressStatus = progressPerc === 100 ? status.passed : status.failed
+      document.getElementById('testProgress').innerHTML = (`
+        <div class="alert alert-${alertType[progressStatus]}">
+          ${progressText}
+          <div class="progress mt-3 mb-2">
+            <div class="progress-bar bg-${alertBadgeType[progressStatus]}" role="progressbar" style="width: ${progressPerc}%;" aria-valuenow="${progressPerc}" aria-valuemin="0" aria-valuemax="100"></div>
+          </div>
+        </div>
+      `)
+
 
       fileResults.forEach(fileResult => {
         const { testResults, failureMessage } = fileResult
@@ -102,18 +122,13 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
           `)
           : ''
 
-        let firstFailureRendered = false
-
         testResults.forEach(result => {
           try {
-            const isFirstFailure = !firstFailureRendered && result.status === status.failed
             const title = JSON.parse(result.title)
             document.getElementById(title.id).innerHTML = resultTemplate({
               title,
-              result,
-              isFirstFailure
+              result
             })
-            firstFailureRendered = firstFailureRendered || isFirstFailure
           } catch (e) {
             console.error(e)
           }
@@ -130,6 +145,7 @@ const initExercise = ({ exerciseId, socketIO, $ }) => {
       statsElement.innerHTML = ''
 
       const { stats } = payload
+      statsElement.innerHTML = `<pre>${JSON.stringify(stats, null, 2)}</pre>`
     }
   })
 

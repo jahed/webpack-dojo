@@ -1,9 +1,176 @@
 <p>
-  The aim of this exercise is to understand the layout of these exercises by creating a minimal Webpack project.
+  To get started we'll be going through the layout of the dojo's exercises and make sure everything's in working order.
+</p>
+
+<h2>Project Layout</h2>
+<p>
+  Let's go through the project's structure. Any files not mentioned here can be ignored.
+</p>
+<p>
+  The main files you'll be touching are under the <code>exercises</code> directory.
+  Here you'll find directories for each exercise which in turn contain the following:
+</p>
+
+<table class="table">
+  <thead>
+  <tr>
+    <th>Path</th>
+    <th>Description</th>
+    <th>Editable?</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>webpack.config.js</td>
+    <td>This is the file you'll be building up to understand how Webpack is configured.</td>
+    <td class="bg-success text-light">Yes</td>
+  </tr>
+  <tr>
+    <td>webpack.config.test.js</td>
+    <td>This file contains the tests to validate you've configured the webpack.config.js correctly.</td>
+    <td>No</td>
+  </tr>
+  <tr>
+    <td>src</td>
+    <td>A directory containing all of the dependencies used by this project.</td>
+    <td class="bg-success text-light">Yes</td>
+  </tr>
+  <tr>
+    <td>dojo_files</td>
+    <td>
+      This directory contains files used to present the exercise for the dojo.
+    </td>
+    <td>No</td>
+  </tr>
+  </tbody>
+</table>
+
+<h2>How it works</h2>
+<p>
+  This page you're viewing is hooked up to a server which is watching the exercise's files for changes. When any changes
+  are detected, the tests are re-run and the page automatically updates itself.
+  There's no need for you to run the tests or Webpack manually!
+</p>
+
+<h3>Webpack Output Panel</h3>
+<p>
+  The panel you see to your right is the output from Webpack. This is useful to understand as we go through each
+  exercise. Not all of it is important, but we'll be picking out bits and pieces.
+</p>
+
+<h2>Your First Tasks</h2>
+
+<p>
+  So hopefully, you have a rough idea of what you're working with. To test your understanding, below you'll see a
+  failing task in yellow. What's the issue? An explanation is provided immediately afterwards. <strong>If you know a bit of
+  Webpack already, try making it pass before you read the solution.</strong> For debug output, you can click the "Fail" button.
 </p>
 
 <div id="1.1" class="test-case"></div>
-<div id="1.2" class="test-case"></div>
-<div id="1.3" class="test-case"></div>
 
-<p>blah blah the end</p>
+<pre><code class="javascript">
+const path = require('path')
+
+const inputPath = path.resolve(__dirname, 'src')
+const outputPath = path.resolve(__dirname, 'dist')
+
+module.exports = {
+  context: inputPath,
+  entry: {
+    index: ['./index.js']
+  },
+  output: {
+    path: outputPath,
+    filename: '[name].js'
+  }
+}
+</code></pre>
+
+<p>
+  We're doing a few additional steps than necessary to keep things organised. Here's the rundown.
+</p>
+
+<table class="table">
+  <thead>
+  <tr>
+    <th>Property</th>
+    <th>Description</th>
+  </tr>
+  </thead>
+  <tbody>
+  <tr>
+    <td>context</td>
+    <td>Sets the root path to resolve all inputs.</td>
+  </tr>
+  <tr>
+    <td>entry</td>
+    <td>A map of entry names to entry files. All the files are grouped into a single bundle.</td>
+  </tr>
+  <tr>
+    <td>output.path</td>
+    <td>Where to write the final bundle.</td>
+  </tr>
+  <tr>
+    <td>output.filename</td>
+    <td>The output filename for every entry bundle. We can use template strings here.</td>
+  </tr>
+</table>
+
+<h3>Entry Map</h3>
+<p>
+  The <code>entry</code> map defines Webpack's starting points when it parses your source code. From these files,
+  it'll read and gather all external dependencies (using <code>require</code> or <code>import</code> keywords).
+</p>
+<p>
+  The key of the map is the <code>name</code> used in the output file. The values are the source files to parse.
+</p>
+<p>
+  We'll go into this in detail in a later exercise. Right now, if you open the <code>src</code> directory, you'll
+  see our source code has no dependencies.
+</p>
+
+<h3>The Output Path</h3>
+<p>
+  The <code>output.path</code> isn't needed for this task as we're focusing on Webpack's output rather than any
+  filesystem changes. This dojo will be entirely run in-memory so you won't see any files being written to disk.
+  However, it's generally good practice to be explicit on where your files are going.
+</p>
+
+<h3>The Output Filename</h3>
+<p>
+  The <code>output.filename</code> is also not needed for this task as <code>[name].js</code> is actually the default.
+  I've added it to show how we can change the output names of the entry bundles.
+</p>
+<p>
+  Now for your next task. <a href="https://webpack.js.org/configuration/output/#output-filename" target="_blank">Read up on
+  <code>output.filename</code></a> and change the output names so that it also contains a hash representation
+  of the bundle such that the <code>index</code> entry becomes <code>index-abc123.js</code>.
+</p>
+
+<div id="1.2" class="test-case"></div>
+
+<pre><code class="javascript">
+const path = require('path')
+
+const inputPath = path.resolve(__dirname, 'src')
+const outputPath = path.resolve(__dirname, 'dist')
+
+module.exports = {
+  context: inputPath,
+  entry: {
+    index: ['./index.js']
+  },
+  output: {
+    path: outputPath,
+    filename: '[name]-[hash].js'
+  }
+}
+</code></pre>
+
+<h3>Conclusion</h3>
+<p>
+  That's all for this exercise! You should now have a rough idea of how these exercises will be run.
+</p>
+<p>
+  You can move on to the next exercise to actually start learning about Webpack.
+</p>

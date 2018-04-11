@@ -6,10 +6,12 @@ const assets = {
     'handlebars': require.resolve('handlebars/dist/handlebars.js'),
     'exercise': path.resolve(__dirname, 'exercise.web.js'),
     'bootstrap': require.resolve('bootstrap/dist/js/bootstrap.bundle.js'),
-    'jquery': require.resolve('jquery/dist/jquery.slim.js')
+    'jquery': require.resolve('jquery/dist/jquery.slim.js'),
+    'highlight': path.resolve(__dirname, 'highlight.js')
   },
   'css': {
-    'bootstrap': require.resolve('bootstrap/dist/css/bootstrap.css')
+    'bootstrap': require.resolve('bootstrap/dist/css/bootstrap.css'),
+    'highlight': require.resolve('highlight.js/styles/tomorrow-night.css')
   }
 }
 
