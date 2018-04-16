@@ -10,6 +10,7 @@ const exercises = require('./exercises')
 const AnsiToHTML = require('ansi-to-html')
 const ansiToHTML = new AnsiToHTML()
 const logger = require('./logger')
+const watchFile = require('./watchFile')
 const { exec } = require('child_process')
 const readFile = util.promisify(fs.readFile)
 
@@ -86,35 +87,23 @@ const createServer = async () => {
 
         exerciseLogger.info({ exercise }, 'exercise found')
 
-        const sendResults = async (resultsPath) => {
-          try {
-            const resultsFile = await readFile(resultsPath)
-            const results = JSON.parse(resultsFile.toString())
-            results.testResults.forEach(r1 => {
-              r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
-              r1.testResults.forEach(r2 => {
-                r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
-              })
+        const sendResults = async resultsPath => {
+          const resultsFile = await readFile(resultsPath)
+          const results = JSON.parse(resultsFile.toString())
+          results.testResults.forEach(r1 => {
+            r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
+            r1.testResults.forEach(r2 => {
+              r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
             })
+          })
 
-            socket.emit('EXERCISE_RESULTS', {
-              results
-            })
-          } catch (e) {
-            exerciseLogger.error(e, 'failed to send results')
-          }
+          socket.emit('EXERCISE_RESULTS', { results })
         }
 
         const sendStats = async (statsPath) => {
-          try {
-            const statsFile = await readFile(statsPath)
-            const stats = JSON.parse(statsFile.toString())
-            socket.emit('EXERCISE_STATS', {
-              stats
-            })
-          } catch (e) {
-            exerciseLogger.error(e, 'failed to send stats')
-          }
+          const statsFile = await readFile(statsPath)
+          const stats = JSON.parse(statsFile.toString())
+          socket.emit('EXERCISE_STATS', { stats })
         }
 
         const runTestWatcher = () => {
@@ -137,27 +126,34 @@ const createServer = async () => {
             sendStats(exercise.statsPath)
           ])
         } catch (e) {
-          exerciseLogger.warn(e, 'ignoring initial parse error')
+          exerciseLogger.debug(e, 'ignoring initial parse error')
         }
 
         exerciseLogger.info('watching results')
-        const resultsWatcher = fs.watch(exercise.resultsPath, async type => {
-          if (type === 'change') {
+        const resultsWatcher = await watchFile({
+          path: exercise.resultsPath,
+          onChange: async ({ filename, stats }) => {
             try {
-              await sendResults(exercise.resultsPath)
+              if (stats.size === 0) {
+                // Jest empties file before writing.
+                return
+              }
+
+              await sendResults(filename)
             } catch (e) {
-              exerciseLogger.warn(e, 'ignoring results parse error')
+              exerciseLogger.error(e, { filename, stats }, 'failed to send results')
             }
           }
         })
 
         exerciseLogger.info('watching stats')
-        const statsWatcher = fs.watch(exercise.statsPath, async type => {
-          if (type === 'change') {
+        const statsWatcher = await watchFile({
+          path: exercise.statsPath,
+          onChange: async ({ filename, stats: fileStats }) => {
             try {
-              await sendStats(exercise.statsPath)
+              await sendStats(filename)
             } catch (e) {
-              exerciseLogger.warn(e, 'ignoring stats parse error')
+              exerciseLogger.error(e, 'failed to send stats')
             }
           }
         })

@@ -41,7 +41,7 @@ const initExercise = ({ exerciseId, socketIO, $, hljs }) => {
 
   const alertBadgeText = {
     passed: 'Pass',
-    failed: 'Fail',
+    failed: 'Fail ',
     loading: 'Unknown'
   }
 
@@ -49,7 +49,7 @@ const initExercise = ({ exerciseId, socketIO, $, hljs }) => {
     const statusButton = result.status === status.failed
       ? (`
         <button class="btn btn-sm btn-${alertBadgeType[result.status]} float-right" type="button" data-toggle="collapse" data-target="#${title.id}-collapse">
-          ${alertBadgeText[result.status]}
+          ${alertBadgeText[result.status]} <small>▼</small>
         </button>
       `)
       : (`
@@ -78,61 +78,77 @@ const initExercise = ({ exerciseId, socketIO, $, hljs }) => {
     `
   }
 
+  const progressTemplate = ({ total, passed }) => {
+    const progressPerc = Math.floor((passed / (total || 1)) * 100)
+    const progressText = `Completed ${passed} of ${total} Tasks${progressPerc === 100 ? '. Exercise Complete!' : ''}`
+    const progressStatus = progressPerc === 100 ? status.passed : status.failed
+
+    return `
+      <div class="alert alert-${alertType[progressStatus]}">
+        ${progressText}
+        <div class="progress mt-3 mb-2">
+          <div class="progress-bar bg-${alertBadgeType[progressStatus]}" role="progressbar" style="width: ${progressPerc}%;" aria-valuenow="${progressPerc}" aria-valuemin="0" aria-valuemax="100"></div>
+        </div>
+      </div>
+    `
+  }
+
   listenFor({
     socket,
     type: 'EXERCISE_RESULTS',
     handler: payload => {
-      document.querySelectorAll('.test-case').forEach(e => {
-        e.innerHTML = resultTemplate({
-          title: {
-            id: e.id,
-            description: 'Exercise'
-          },
-          result: {
-            status: 'loading'
-          }
-        })
-      })
-
       const { results } = payload
       const { testResults: fileResults, numPassedTests, numTotalTests } = results
+      const testCaseElements = document.querySelectorAll('.test-case')
 
-      const progressPerc = Math.floor((numPassedTests / (numTotalTests || 1)) * 100)
-      const progressText = progressPerc === 100 ? 'Exercise Complete!' : `Completed ${numPassedTests} of ${numTotalTests} Tasks`
-      const progressStatus = progressPerc === 100 ? status.passed : status.failed
-      document.getElementById('testProgress').innerHTML = (`
-        <div class="alert alert-${alertType[progressStatus]}">
-          ${progressText}
-          <div class="progress mt-3 mb-2">
-            <div class="progress-bar bg-${alertBadgeType[progressStatus]}" role="progressbar" style="width: ${progressPerc}%;" aria-valuenow="${progressPerc}" aria-valuemin="0" aria-valuemax="100"></div>
-          </div>
-        </div>
-      `)
-
+      document.getElementById('testProgress').innerHTML = progressTemplate({
+        total: numTotalTests || testCaseElements.length,
+        passed: numPassedTests || 0
+      })
 
       fileResults.forEach(fileResult => {
         const { testResults, failureMessage } = fileResult
 
-        document.getElementById('totalFailure').innerHTML = testResults.length < 1 && failureMessage
-          ? (`
-            <div class="alert alert-danger">
-              <p>Failed to parse code. Check the follow piece of code before continuing:</p>
-              <pre class="bg-dark text-light p-4">${failureMessage}</pre>
-            </div>
-          `)
-          : ''
-
-        testResults.forEach(result => {
-          try {
-            const title = JSON.parse(result.title)
-            document.getElementById(title.id).innerHTML = resultTemplate({
-              title,
-              result
+        if (testResults.length < 1 && failureMessage) {
+          testCaseElements.forEach(e => {
+            e.innerHTML = resultTemplate({
+              title: {
+                id: e.id,
+                description: 'Failed to parse code. Check the follow piece of code before continuing:'
+              },
+              result: {
+                failureMessages: [
+                  failureMessage
+                ],
+                status: 'failed'
+              }
             })
-          } catch (e) {
-            console.error(e)
-          }
-        })
+          })
+        } else {
+          testCaseElements.forEach(e => {
+            e.innerHTML = resultTemplate({
+              title: {
+                id: e.id,
+                description: 'Exercise'
+              },
+              result: {
+                status: 'loading'
+              }
+            })
+          })
+
+          testResults.forEach(result => {
+            try {
+              const title = JSON.parse(result.title)
+              document.getElementById(title.id).innerHTML = resultTemplate({
+                title,
+                result
+              })
+            } catch (e) {
+              console.error(e)
+            }
+          })
+        }
       })
     }
   })
@@ -142,7 +158,7 @@ const initExercise = ({ exerciseId, socketIO, $, hljs }) => {
     type: 'EXERCISE_STATS',
     handler: payload => {
       const statsElement = document.getElementById('stats')
-      statsElement.innerHTML = ''
+      statsElement.innerHTML = '<span class="text-muted">No output.</span>'
 
       const { stats } = payload
       statsElement.innerHTML = `<pre>${JSON.stringify(stats, null, 2)}</pre>`

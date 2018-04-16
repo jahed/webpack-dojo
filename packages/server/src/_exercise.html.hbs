@@ -17,7 +17,6 @@
     </style>
     <article class="ml-4 mr-4">
       <h1>{{exercise.title}}</h1>
-      <div id="totalFailure"></div>
       {{{content}}}
       <div id="testProgress"></div>
     </article>
@@ -37,7 +36,9 @@
         </a>
       </div>
       <div class="card-body">
-        <div id="stats"></div>
+        <div id="stats">
+          <span class="text-muted">No output.</span>
+        </div>
       </div>
     </div>
   </div>
