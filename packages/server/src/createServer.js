@@ -66,8 +66,7 @@ const createServer = async () => {
   })
 
   io.on('connection', socket => {
-    console.log('a user connected')
-    socket.on('EXERCISE_REQUEST', async ({ exerciseId }) => {
+    const exerciseRequest = async ({ exerciseId }) => {
       const exercise = exercises[exerciseId]
       console.log('EXERCISE_REQUEST: ' + exerciseId)
 
@@ -78,26 +77,34 @@ const createServer = async () => {
       console.log('Exercise', exercise)
 
       const sendResults = async (resultsPath) => {
-        const resultsFile = await readFile(resultsPath)
-        const results = JSON.parse(resultsFile.toString())
-        results.testResults.forEach(r1 => {
-          r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
-          r1.testResults.forEach(r2 => {
-            r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
+        try {
+          const resultsFile = await readFile(resultsPath)
+          const results = JSON.parse(resultsFile.toString())
+          results.testResults.forEach(r1 => {
+            r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
+            r1.testResults.forEach(r2 => {
+              r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
+            })
           })
-        })
 
-        socket.emit('EXERCISE_RESULTS', {
-          results
-        })
+          socket.emit('EXERCISE_RESULTS', {
+            results
+          })
+        } catch (e) {
+          console.log(e)
+        }
       }
 
       const sendStats = async (statsPath) => {
-        const statsFile = await readFile(statsPath)
-        const stats = JSON.parse(statsFile.toString())
-        socket.emit('EXERCISE_STATS', {
-          stats
-        })
+        try {
+          const statsFile = await readFile(statsPath)
+          const stats = JSON.parse(statsFile.toString())
+          socket.emit('EXERCISE_STATS', {
+            stats
+          })
+        } catch (e) {
+          console.log(e)
+        }
       }
 
       const runTestWatcher = () => {
@@ -161,6 +168,12 @@ const createServer = async () => {
         resultsWatcher.close()
         statsWatcher.close()
       })
+    }
+
+    console.log('a user connected')
+    socket.on('EXERCISE_REQUEST', payload => {
+      exerciseRequest(payload)
+        .catch(e => console.log('EXERCISE_REQUEST failed', e))
     })
   })
 
