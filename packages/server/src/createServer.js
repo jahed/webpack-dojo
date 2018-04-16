@@ -9,6 +9,7 @@ const getAssetPath = require('./getAssetPath')
 const exercises = require('./exercises')
 const AnsiToHTML = require('ansi-to-html')
 const ansiToHTML = new AnsiToHTML()
+const logger = require('./logger')
 const { exec } = require('child_process')
 const readFile = util.promisify(fs.readFile)
 
@@ -19,6 +20,11 @@ const createServer = async () => {
   const app = express()
   const server = http.Server(app)
   const io = socketIO(server)
+
+  app.use((req, res, next) => {
+    logger.debug(req, 'request received')
+    next()
+  })
 
   app.get('/assets/:type/:scriptId', (req, res) => {
     const assetPath = getAssetPath(req.params.type, req.params.scriptId)
@@ -66,114 +72,112 @@ const createServer = async () => {
   })
 
   io.on('connection', socket => {
-    const exerciseRequest = async ({ exerciseId }) => {
-      const exercise = exercises[exerciseId]
-      console.log('EXERCISE_REQUEST: ' + exerciseId)
+    const socketLogger = logger.child({ socketId: socket.id })
+    socketLogger.debug('a user connected')
 
-      if (!exercise) {
-        throw new Error('EXERCISE_REQUEST: does not exist')
-      }
-
-      console.log('Exercise', exercise)
-
-      const sendResults = async (resultsPath) => {
-        try {
-          const resultsFile = await readFile(resultsPath)
-          const results = JSON.parse(resultsFile.toString())
-          results.testResults.forEach(r1 => {
-            r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
-            r1.testResults.forEach(r2 => {
-              r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
-            })
-          })
-
-          socket.emit('EXERCISE_RESULTS', {
-            results
-          })
-        } catch (e) {
-          console.log(e)
-        }
-      }
-
-      const sendStats = async (statsPath) => {
-        try {
-          const statsFile = await readFile(statsPath)
-          const stats = JSON.parse(statsFile.toString())
-          socket.emit('EXERCISE_STATS', {
-            stats
-          })
-        } catch (e) {
-          console.log(e)
-        }
-      }
-
-      const runTestWatcher = () => {
-        const testProcess = exec(exercise.testCommand)
-
-        testProcess.stdout.on('data', (data) => {
-          console.log(data)
-        })
-
-        testProcess.stderr.on('data', (data) => {
-          console.log(data)
-        })
-
-        testProcess.on('error', (error) => {
-          console.log(error)
-        })
-
-        testProcess.on('close', (code) => {
-          console.log(`testWatcher exited with code ${code}`)
-        })
-
-        return testProcess
-      }
-
-      try {
-        await Promise.all([
-          sendResults(exercise.resultsPath),
-          sendStats(exercise.statsPath)
-        ])
-      } catch (e) {
-        console.warn('ignoring initial parse error', e)
-      }
-
-      console.log('watching', exercise.resultsPath)
-      const resultsWatcher = fs.watch(exercise.resultsPath, async type => {
-        if (type === 'change') {
-          try {
-            await sendResults(exercise.resultsPath)
-          } catch (e) {
-            console.warn('ignoring parse error', e)
-          }
-        }
-      })
-
-      console.log('watching', exercise.statsPath)
-      const statsWatcher = fs.watch(exercise.statsPath, async type => {
-        if (type === 'change') {
-          try {
-            await sendStats(exercise.statsPath)
-          } catch (e) {
-            console.warn('ignoring parse error', e)
-          }
-        }
-      })
-
-      const testWatcher = runTestWatcher()
-
-      socket.on('disconnect', () => {
-        console.log('closing', exercise.resultsPath)
-        testWatcher.kill('SIGINT')
-        resultsWatcher.close()
-        statsWatcher.close()
-      })
-    }
-
-    console.log('a user connected')
     socket.on('EXERCISE_REQUEST', payload => {
+      const exerciseRequest = async ({ exerciseId }) => {
+        const exerciseLogger = socketLogger.child({ exerciseId })
+        const exercise = exercises[exerciseId]
+
+        if (!exercise) {
+          throw new Error('exercise does not exist')
+        }
+
+        exerciseLogger.info({ exercise }, 'exercise found')
+
+        const sendResults = async (resultsPath) => {
+          try {
+            const resultsFile = await readFile(resultsPath)
+            const results = JSON.parse(resultsFile.toString())
+            results.testResults.forEach(r1 => {
+              r1.failureMessage = r1.failureMessage ? ansiToHTML.toHtml(r1.failureMessage) : undefined
+              r1.testResults.forEach(r2 => {
+                r2.failureMessages = r2.failureMessages ? r2.failureMessages.map(f => ansiToHTML.toHtml(f)) : undefined
+              })
+            })
+
+            socket.emit('EXERCISE_RESULTS', {
+              results
+            })
+          } catch (e) {
+            exerciseLogger.error(e, 'failed to send results')
+          }
+        }
+
+        const sendStats = async (statsPath) => {
+          try {
+            const statsFile = await readFile(statsPath)
+            const stats = JSON.parse(statsFile.toString())
+            socket.emit('EXERCISE_STATS', {
+              stats
+            })
+          } catch (e) {
+            exerciseLogger.error(e, 'failed to send stats')
+          }
+        }
+
+        const runTestWatcher = () => {
+          const testProcess = exec(exercise.testCommand)
+
+          testProcess.on('error', (error) => {
+            exerciseLogger.error(error, 'test watcher emitted an error')
+          })
+
+          testProcess.on('close', (code) => {
+            exerciseLogger.info({ code }, 'testWatcher exited')
+          })
+
+          return testProcess
+        }
+
+        try {
+          await Promise.all([
+            sendResults(exercise.resultsPath),
+            sendStats(exercise.statsPath)
+          ])
+        } catch (e) {
+          exerciseLogger.warn(e, 'ignoring initial parse error')
+        }
+
+        exerciseLogger.info('watching results')
+        const resultsWatcher = fs.watch(exercise.resultsPath, async type => {
+          if (type === 'change') {
+            try {
+              await sendResults(exercise.resultsPath)
+            } catch (e) {
+              exerciseLogger.warn(e, 'ignoring results parse error')
+            }
+          }
+        })
+
+        exerciseLogger.info('watching stats')
+        const statsWatcher = fs.watch(exercise.statsPath, async type => {
+          if (type === 'change') {
+            try {
+              await sendStats(exercise.statsPath)
+            } catch (e) {
+              exerciseLogger.warn(e, 'ignoring stats parse error')
+            }
+          }
+        })
+
+        const testWatcher = runTestWatcher()
+
+        socket.on('disconnect', () => {
+          exerciseLogger.info('closing exercise')
+          testWatcher.kill('SIGINT')
+          resultsWatcher.close()
+          statsWatcher.close()
+        })
+      }
+
+      const exerciseLogger = socketLogger.child({ exerciseId: payload.exerciseId })
+      const action = { type: 'EXERCISE_REQUEST', payload }
+      exerciseLogger.info(action, 'message received')
+
       exerciseRequest(payload)
-        .catch(e => console.log('EXERCISE_REQUEST failed', e))
+        .catch(e => exerciseLogger.error(e, 'message response failed'))
     })
   })
 
